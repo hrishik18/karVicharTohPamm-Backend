@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Add Google Authentication Middleware
+
 exports.protect = async (req, res, next) => {
     let token;
 
