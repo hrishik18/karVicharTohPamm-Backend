@@ -57,4 +57,18 @@ jobs:
           app-name: 'kvtp-backend'
           slot-name: 'Production'
           package: .
+
+      - name: Set up Node.js for seed
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Seed admin user
+        run: |
+          npm install --production
+          SETTINGS=$(az webapp config appsettings list --name kvtp-backend --resource-group rg-karvichattohpamm --output json)
+          export MONGO_URI=$(echo "$SETTINGS" | jq -r '.[] | select(.name=="MONGO_URI") | .value')
+          export ADMIN_EMAIL=$(echo "$SETTINGS" | jq -r '.[] | select(.name=="ADMIN_EMAIL") | .value')
+          export ADMIN_PASSWORD=$(echo "$SETTINGS" | jq -r '.[] | select(.name=="ADMIN_PASSWORD") | .value')
+          node scripts/seed-admin.js
           
