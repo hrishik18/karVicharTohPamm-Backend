@@ -54,7 +54,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'KarVicharTohPamm'
+          app-name: 'kvtp-backend'
           slot-name: 'Production'
           package: .
           
