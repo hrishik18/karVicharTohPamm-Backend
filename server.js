@@ -1,9 +1,11 @@
 // server.js
+const dotenv = require('dotenv');
+dotenv.config(); // MUST be first — before any module that reads process.env
+
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const streamRoutes = require('./routes/stream');
 const { protect } = require('./middleware/auth');
@@ -11,8 +13,6 @@ const { publicRouter: radioPublicRoutes, adminRouter: radioAdminRoutes } = requi
 const uploadRoutes = require('./modules/upload/upload.routes');
 const { initSocket } = require('./socket/index');
 const { getCorsOrigins } = require('./config/cors');
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);

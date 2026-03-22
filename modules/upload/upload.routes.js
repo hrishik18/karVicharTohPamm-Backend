@@ -19,6 +19,9 @@ const upload = multer({
 });
 
 // JWT protection applied at mount level in server.js
-router.post('/', upload.single('file'), uploadController.uploadFile);
+router.post('/', (req, res, next) => {
+    console.log('[upload.routes] POST /upload hit, content-type:', req.headers['content-type']);
+    next();
+}, upload.single('file'), uploadController.uploadFile);
 
 module.exports = router;

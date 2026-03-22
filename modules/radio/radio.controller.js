@@ -6,31 +6,40 @@ exports.getStatus = (req, res) => {
     res.json(radioService.getStatus());
 };
 
-exports.getQueue = (req, res) => {
-    res.json(radioService.getQueue());
+exports.getPlaylist = async (req, res) => {
+    try {
+        const list = await radioService.getPlaylist();
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
-// --- Admin controllers ---
+exports.getCurrent = (req, res) => {
+    res.json(radioService.getCurrent());
+};
 
-exports.setMode = (req, res) => {
+// --- Admin: Speaker (live toggle) ---
+
+exports.goLive = (req, res) => {
     try {
-        const { mode } = req.body;
-        const result = radioService.setMode(mode);
+        const result = radioService.goLive();
         res.json(result);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
 
-exports.setSpeaker = (req, res) => {
+exports.stopLive = (req, res) => {
     try {
-        const { name } = req.body;
-        const result = radioService.setSpeaker(name);
+        const result = radioService.stopLive();
         res.json(result);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
+
+// --- Admin: Song controls ---
 
 exports.setSong = (req, res) => {
     try {
@@ -42,65 +51,55 @@ exports.setSong = (req, res) => {
     }
 };
 
-// --- Queue controllers ---
+// --- Admin: Playlist management ---
 
-exports.addSongToQueue = (req, res) => {
+exports.addSongToPlaylist = async (req, res) => {
     try {
         const { title, url, duration } = req.body;
-        const song = radioService.addSongToQueue(title, url, duration);
+        const song = await radioService.addSongToPlaylist(title, url, duration);
         res.status(201).json(song);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
 
-exports.removeSongFromQueue = (req, res) => {
+exports.removeSongFromPlaylist = async (req, res) => {
     try {
-        radioService.removeSongFromQueue(req.params.id);
+        await radioService.removeSongFromPlaylist(req.params.id);
         res.json({ message: 'Song removed' });
     } catch (error) {
         res.status(404).json({ message: error.message });
     }
 };
 
-exports.addSpeakerToQueue = (req, res) => {
-    try {
-        const { name } = req.body;
-        const speaker = radioService.addSpeakerToQueue(name);
-        res.status(201).json(speaker);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-};
-
-// --- Select from queue controllers ---
-
-exports.selectSong = (req, res) => {
+exports.playSongFromPlaylist = async (req, res) => {
     try {
         const { id } = req.body;
-        const result = radioService.selectSongFromQueue(id);
+        const result = await radioService.playSongFromPlaylist(id);
         res.json(result);
     } catch (error) {
         res.status(404).json({ message: error.message });
     }
 };
 
-exports.selectSpeaker = (req, res) => {
+exports.editSong = async (req, res) => {
     try {
-        const { id } = req.body;
-        const result = radioService.selectSpeakerFromQueue(id);
+        const { title, url, duration } = req.body;
+        const result = await radioService.editSongInPlaylist(req.params.id, { title, url, duration });
         res.json(result);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        const status = error.message.includes('not found') ? 404 : 400;
+        res.status(status).json({ message: error.message });
     }
 };
 
-// --- Playlist controllers ---
-
-exports.getPlaylist = (req, res) => {
-    res.json(radioService.getPlaylist());
-};
-
-exports.getCurrent = (req, res) => {
-    res.json(radioService.getCurrent());
+exports.reorderSong = async (req, res) => {
+    try {
+        const { id, direction } = req.body;
+        const result = await radioService.reorderSongInPlaylist(id, direction);
+        res.json(result);
+    } catch (error) {
+        const status = error.message.includes('not found') ? 404 : 400;
+        res.status(status).json({ message: error.message });
+    }
 };

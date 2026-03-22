@@ -21,6 +21,15 @@ const initSocket = (httpServer) => {
         // Send current state on connect
         socket.emit('status-update', radioService.getStatus());
 
+        // Client reports that a song finished playing
+        socket.on('song-ended', (data) => {
+            const id = data && typeof data.id === 'string' ? data.id : null;
+            if (!id) return;
+            radioService.advanceToNextSong(id).catch(err =>
+                console.error('song-ended handler error:', err.message)
+            );
+        });
+
         socket.on('disconnect', () => {
             console.log(`Client disconnected: ${socket.id}`);
         });
