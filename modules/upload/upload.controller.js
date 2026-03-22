@@ -1,16 +1,20 @@
 const uploadService = require('./upload.service');
 
-exports.uploadFile = async (req, res) => {
-    console.log('[upload.controller] uploadFile hit');
-    console.log('[upload.controller] req.file:', req.file ? { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size } : 'NO FILE');
+exports.uploadFiles = async (req, res) => {
+    console.log('[upload.controller] uploadFiles hit, file count:', req.files?.length);
     try {
-        if (!req.file) {
-            console.warn('[upload.controller] no file in request');
-            return res.status(400).json({ message: 'No file provided' });
+        if (!req.files || req.files.length === 0) {
+            console.warn('[upload.controller] no files in request');
+            return res.status(400).json({ message: 'No files provided' });
         }
-        const url = await uploadService.uploadToBlob(req.file);
-        console.log('[upload.controller] upload done, url:', url);
-        res.json({ message: 'Upload successful', url });
+        const results = [];
+        for (const file of req.files) {
+            console.log('[upload.controller] uploading:', file.originalname);
+            const url = await uploadService.uploadToBlob(file);
+            results.push({ originalName: file.originalname, url });
+        }
+        console.log('[upload.controller] all uploads done, count:', results.length);
+        res.json({ message: 'Upload successful', results });
     } catch (error) {
         console.error('[upload.controller] ERROR:', error.message);
         res.status(500).json({ message: error.message });

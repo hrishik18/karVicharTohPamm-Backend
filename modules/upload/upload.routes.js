@@ -3,12 +3,13 @@ const multer = require('multer');
 const uploadController = require('./upload.controller');
 
 const ALLOWED_MIMES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 10MB
+const MAX_FILES = 10;
 
 const router = express.Router();
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_FILE_SIZE },
+    limits: { fileSize: MAX_FILE_SIZE, files: MAX_FILES },
     fileFilter: (req, file, cb) => {
         if (ALLOWED_MIMES.includes(file.mimetype)) {
             cb(null, true);
@@ -22,6 +23,6 @@ const upload = multer({
 router.post('/', (req, res, next) => {
     console.log('[upload.routes] POST /upload hit, content-type:', req.headers['content-type']);
     next();
-}, upload.single('file'), uploadController.uploadFile);
+}, upload.array('files', MAX_FILES), uploadController.uploadFiles);
 
 module.exports = router;
