@@ -14,6 +14,9 @@ const state = {
 let lastAdvancedTrackId = null;
 // Fallback timer: auto-advance if no client reports song-ended
 let autoAdvanceTimer = null;
+// Rate-limit: timestamp of last advance (prevents rapid cycling through broken tracks)
+let lastAdvanceTime = 0;
+const MIN_ADVANCE_INTERVAL_MS = 3000; // min 3 seconds between advances
 
 // Broadcast callback — set by socket/index.js
 let broadcastFn = null;
@@ -169,6 +172,10 @@ const advanceToNextSong = async (endedSongId) => {
     if (state.mode === 'speaker') return;
     // Guard: ignore if the ended song is not the current track
     if (!state.currentTrack || state.currentTrack.id !== endedSongId) return;
+    // Rate-limit: prevent rapid cycling through broken tracks
+    const now = Date.now();
+    if (now - lastAdvanceTime < MIN_ADVANCE_INTERVAL_MS) return;
+    lastAdvanceTime = now;
 
     lastAdvancedTrackId = endedSongId;
     if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
