@@ -120,6 +120,22 @@ const addSongToPlaylist = async (title, url, duration) => {
     return toSongObj(song);
 };
 
+// Shared helper: when the currently playing track has been deleted, advance to the next remaining song.
+const advanceAfterDelete = async () => {
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+    const nextSong = await Song.findOne().sort({ order: 1 });
+    if (nextSong) {
+        state.currentTrack = toSongObj(nextSong);
+        state.startTime = Math.floor(Date.now() / 1000);
+        lastAdvancedTrackId = null;
+        scheduleAutoAdvance(nextSong.duration);
+    } else {
+        state.currentTrack = null;
+        state.startTime = null;
+    }
+    broadcast();
+};
+
 const removeSongFromPlaylist = async (id) => {
     if (!id || typeof id !== 'string') {
         throw new Error('Song id is required');
@@ -131,19 +147,7 @@ const removeSongFromPlaylist = async (id) => {
 
     // If the deleted song was currently playing, advance to the next song
     if (state.currentTrack && state.currentTrack.id === id) {
-        if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
-        const remaining = await Song.find().sort({ order: 1 });
-        if (remaining.length > 0) {
-            const nextSong = remaining[0];
-            state.currentTrack = toSongObj(nextSong);
-            state.startTime = Math.floor(Date.now() / 1000);
-            lastAdvancedTrackId = null;
-            scheduleAutoAdvance(nextSong.duration);
-        } else {
-            state.currentTrack = null;
-            state.startTime = null;
-        }
-        broadcast();
+        await advanceAfterDelete();
     }
 
     await broadcastPlaylist();
@@ -156,19 +160,7 @@ const bulkRemoveSongs = async (ids) => {
     const result = await Song.deleteMany({ _id: { $in: ids } });
     // If current track was among deleted, advance to next remaining song
     if (state.currentTrack && ids.map(String).includes(state.currentTrack.id)) {
-        if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
-        const remaining = await Song.find().sort({ order: 1 });
-        if (remaining.length > 0) {
-            const nextSong = remaining[0];
-            state.currentTrack = toSongObj(nextSong);
-            state.startTime = Math.floor(Date.now() / 1000);
-            lastAdvancedTrackId = null;
-            scheduleAutoAdvance(nextSong.duration);
-        } else {
-            state.currentTrack = null;
-            state.startTime = null;
-        }
-        broadcast();
+        await advanceAfterDelete();
     }
     await broadcastPlaylist();
     return result.deletedCount;
