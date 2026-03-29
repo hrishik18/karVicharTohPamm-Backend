@@ -131,6 +131,66 @@ const removeSongFromPlaylist = async (id) => {
     await broadcastPlaylist();
 };
 
+const bulkRemoveSongs = async (ids) => {
+    if (!Array.isArray(ids) || ids.length === 0) {
+        throw new Error('ids must be a non-empty array');
+    }
+    const result = await Song.deleteMany({ _id: { $in: ids } });
+    // If current track was among deleted, clear it
+    if (state.currentTrack && ids.includes(state.currentTrack.id)) {
+        state.currentTrack = null;
+        state.startTime = null;
+        if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+        broadcast();
+    }
+    await broadcastPlaylist();
+    return result.deletedCount;
+};
+
+const shufflePlaylist = async () => {
+    const songs = await Song.find().sort({ order: 1 });
+    if (songs.length <= 1) return;
+
+    const shuffledSongs = [...songs];
+    for (let i = shuffledSongs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledSongs[i], shuffledSongs[j]] = [shuffledSongs[j], shuffledSongs[i]];
+    }
+
+    const bulkOps = shuffledSongs.map((song, index) => ({
+        updateOne: {
+            filter: { _id: song._id },
+            update: { $set: { order: index } },
+        },
+    }));
+
+    await Song.bulkWrite(bulkOps);
+
+    if (state.mode === 'music' && shuffledSongs.length > 0) {
+        const nextLiveSong = shuffledSongs[0];
+        state.currentTrack = toSongObj({
+            ...nextLiveSong.toObject(),
+            order: 0
+        });
+        state.currentSpeaker = null;
+        state.startTime = Math.floor(Date.now() / 1000);
+        lastAdvancedTrackId = null;
+        scheduleAutoAdvance(nextLiveSong.duration);
+        broadcast();
+    }
+
+    await broadcastPlaylist();
+};
+
+const clearPlaylist = async () => {
+    await Song.deleteMany({});
+    state.currentTrack = null;
+    state.startTime = null;
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+    broadcast();
+    await broadcastPlaylist();
+};
+
 const playSongFromPlaylist = async (id) => {
     if (!id || typeof id !== 'string') {
         throw new Error('Song id is required');
@@ -320,6 +380,9 @@ module.exports = {
     setSong,
     addSongToPlaylist,
     removeSongFromPlaylist,
+    bulkRemoveSongs,
+    shufflePlaylist,
+    clearPlaylist,
     playSongFromPlaylist,
     getPlaylist,
     getCurrent,
