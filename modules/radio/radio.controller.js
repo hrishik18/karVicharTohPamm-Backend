@@ -103,3 +103,36 @@ exports.reorderSong = async (req, res) => {
         res.status(status).json({ message: error.message });
     }
 };
+
+exports.moveSong = async (req, res) => {
+    try {
+        const { id, toIndex } = req.body;
+        const result = await radioService.moveSongToIndex(id, toIndex);
+        res.json(result);
+    } catch (error) {
+        const status = error.message.includes('not found') ? 404 : 400;
+        res.status(status).json({ message: error.message });
+    }
+};
+
+exports.bulkRemoveSongs = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        const count = await radioService.bulkRemoveSongs(ids);
+        res.json({ message: `${count} song(s) removed` });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.shufflePlaylist = async (req, res) => {
+    try {
+        await radioService.shufflePlaylist();
+        const list = await radioService.getPlaylist();
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
