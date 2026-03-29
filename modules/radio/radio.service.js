@@ -154,11 +154,20 @@ const bulkRemoveSongs = async (ids) => {
         throw new Error('ids must be a non-empty array');
     }
     const result = await Song.deleteMany({ _id: { $in: ids } });
-    // If current track was among deleted, clear it
+    // If current track was among deleted, advance to next remaining song
     if (state.currentTrack && ids.map(String).includes(state.currentTrack.id)) {
-        state.currentTrack = null;
-        state.startTime = null;
         if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+        const remaining = await Song.find().sort({ order: 1 });
+        if (remaining.length > 0) {
+            const nextSong = remaining[0];
+            state.currentTrack = toSongObj(nextSong);
+            state.startTime = Math.floor(Date.now() / 1000);
+            lastAdvancedTrackId = null;
+            scheduleAutoAdvance(nextSong.duration);
+        } else {
+            state.currentTrack = null;
+            state.startTime = null;
+        }
         broadcast();
     }
     await broadcastPlaylist();
