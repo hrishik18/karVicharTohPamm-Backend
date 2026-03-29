@@ -128,6 +128,24 @@ const removeSongFromPlaylist = async (id) => {
     if (!song) {
         throw new Error('Song not found in playlist');
     }
+
+    // If the deleted song was currently playing, advance to the next song
+    if (state.currentTrack && state.currentTrack.id === id) {
+        if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+        const remaining = await Song.find().sort({ order: 1 });
+        if (remaining.length > 0) {
+            const nextSong = remaining[0];
+            state.currentTrack = toSongObj(nextSong);
+            state.startTime = Math.floor(Date.now() / 1000);
+            lastAdvancedTrackId = null;
+            scheduleAutoAdvance(nextSong.duration);
+        } else {
+            state.currentTrack = null;
+            state.startTime = null;
+        }
+        broadcast();
+    }
+
     await broadcastPlaylist();
 };
 
