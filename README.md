@@ -79,7 +79,7 @@ ADMIN_PASSWORD=<admin-password>
 
 **Public:** `GET /api/health`, `/api/radio/status`, `/api/radio/playlist`, `/api/radio/current`, `/api/stream/status`
 
-**Admin (JWT):** `POST /api/admin/live`, `/api/admin/live/stop`, `/api/admin/song`, `/api/admin/song/playlist`, `/api/admin/song/play`, `/api/admin/song/reorder`, `/api/admin/upload` | `DELETE /api/admin/song/:id` | `PATCH /api/admin/song/:id`
+**Admin (JWT):** `POST /api/admin/live`, `/api/admin/live/stop`, `/api/admin/song`, `/api/admin/song/playlist`, `/api/admin/song/play`, `/api/admin/song/reorder`, `/api/admin/song/move`, `/api/admin/song/bulk-remove`, `/api/admin/song/shuffle`, `/api/admin/upload` | `DELETE /api/admin/song/:id` | `PATCH /api/admin/song/:id`
 
 **Auth:** `POST /api/auth/register`, `/api/auth/login`
 

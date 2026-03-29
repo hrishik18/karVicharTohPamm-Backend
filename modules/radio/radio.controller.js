@@ -135,11 +135,4 @@ exports.shufflePlaylist = async (req, res) => {
     }
 };
 
-exports.clearPlaylist = async (req, res) => {
-    try {
-        await radioService.clearPlaylist();
-        res.json({ message: 'Playlist cleared' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+

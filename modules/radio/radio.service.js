@@ -155,7 +155,7 @@ const bulkRemoveSongs = async (ids) => {
     }
     const result = await Song.deleteMany({ _id: { $in: ids } });
     // If current track was among deleted, clear it
-    if (state.currentTrack && ids.includes(state.currentTrack.id)) {
+    if (state.currentTrack && ids.map(String).includes(state.currentTrack.id)) {
         state.currentTrack = null;
         state.startTime = null;
         if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
@@ -197,15 +197,6 @@ const shufflePlaylist = async () => {
         broadcast();
     }
 
-    await broadcastPlaylist();
-};
-
-const clearPlaylist = async () => {
-    await Song.deleteMany({});
-    state.currentTrack = null;
-    state.startTime = null;
-    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
-    broadcast();
     await broadcastPlaylist();
 };
 
@@ -298,7 +289,7 @@ const advanceToNextSong = async (endedSongId) => {
 
 const getPlaylist = async () => {
     const songs = await Song.find().sort({ order: 1 });
-    return songs.map((doc, index) => ({ ...toSongObj(doc), order: index + 1 }));
+    return songs.map((doc, index) => ({ ...toSongObj(doc), order: index }));
 };
 
 const getCurrent = () => ({
@@ -394,8 +385,8 @@ const moveSongToIndex = async (id, toIndex) => {
     if (!id || typeof id !== 'string') {
         throw new Error('Song id is required');
     }
-    if (typeof toIndex !== 'number' || toIndex < 0) {
-        throw new Error('toIndex must be a non-negative number');
+    if (!Number.isInteger(toIndex) || toIndex < 0) {
+        throw new Error('toIndex must be a non-negative integer');
     }
 
     const songs = await Song.find().sort({ order: 1 });
@@ -459,7 +450,6 @@ module.exports = {
     removeSongFromPlaylist,
     bulkRemoveSongs,
     shufflePlaylist,
-    clearPlaylist,
     playSongFromPlaylist,
     getPlaylist,
     getCurrent,

@@ -26,6 +26,5 @@ adminRouter.post('/song/reorder', radioController.reorderSong);
 adminRouter.post('/song/move', radioController.moveSong);
 adminRouter.post('/song/bulk-remove', radioController.bulkRemoveSongs);
 adminRouter.post('/song/shuffle', radioController.shufflePlaylist);
-adminRouter.delete('/song/clear', radioController.clearPlaylist);
 
 module.exports = { publicRouter, adminRouter };
