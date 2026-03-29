@@ -23,6 +23,7 @@ adminRouter.delete('/song/:id', radioController.removeSongFromPlaylist);
 adminRouter.post('/song/play', radioController.playSongFromPlaylist);    // pick from playlist to play now
 adminRouter.patch('/song/:id', radioController.editSong);
 adminRouter.post('/song/reorder', radioController.reorderSong);
+adminRouter.post('/song/move', radioController.moveSong);
 adminRouter.post('/song/bulk-remove', radioController.bulkRemoveSongs);
 adminRouter.post('/song/shuffle', radioController.shufflePlaylist);
 adminRouter.delete('/song/clear', radioController.clearPlaylist);

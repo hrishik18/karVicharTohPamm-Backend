@@ -372,6 +372,65 @@ const reorderSongInPlaylist = async (id, direction) => {
     return getPlaylist();
 };
 
+const moveSongToIndex = async (id, toIndex) => {
+    if (!id || typeof id !== 'string') {
+        throw new Error('Song id is required');
+    }
+    if (typeof toIndex !== 'number' || toIndex < 0) {
+        throw new Error('toIndex must be a non-negative number');
+    }
+
+    const songs = await Song.find().sort({ order: 1 });
+    const fromIndex = songs.findIndex(s => s._id.toString() === id);
+    if (fromIndex === -1) {
+        throw new Error('Song not found in playlist');
+    }
+
+    // Clamp toIndex to valid range
+    const clampedTo = Math.min(toIndex, songs.length - 1);
+    if (fromIndex === clampedTo) {
+        await broadcastPlaylist();
+        return getPlaylist();
+    }
+
+    // Remove song from array and reinsert at target position
+    const [movedSong] = songs.splice(fromIndex, 1);
+    songs.splice(clampedTo, 0, movedSong);
+
+    // Reassign order values
+    const bulkOps = songs.map((song, idx) => ({
+        updateOne: {
+            filter: { _id: song._id },
+            update: { $set: { order: idx } },
+        },
+    }));
+    await Song.bulkWrite(bulkOps);
+
+    // Auto-play: if the song moved to position 0, play it.
+    // If the song was at position 0 and moved away, play the new position 0.
+    if (clampedTo === 0) {
+        state.mode = 'music';
+        state.currentTrack = toSongObj({ ...movedSong.toObject(), order: 0 });
+        state.currentSpeaker = null;
+        state.startTime = Math.floor(Date.now() / 1000);
+        lastAdvancedTrackId = null;
+        scheduleAutoAdvance(movedSong.duration);
+        broadcast();
+    } else if (fromIndex === 0 && songs[0]) {
+        const newTop = songs[0];
+        state.mode = 'music';
+        state.currentTrack = toSongObj({ ...newTop.toObject(), order: 0 });
+        state.currentSpeaker = null;
+        state.startTime = Math.floor(Date.now() / 1000);
+        lastAdvancedTrackId = null;
+        scheduleAutoAdvance(newTop.duration);
+        broadcast();
+    }
+
+    await broadcastPlaylist();
+    return getPlaylist();
+};
+
 module.exports = {
     setBroadcast,
     getStatus,
@@ -388,5 +447,6 @@ module.exports = {
     getCurrent,
     editSongInPlaylist,
     reorderSongInPlaylist,
+    moveSongToIndex,
     advanceToNextSong
 };

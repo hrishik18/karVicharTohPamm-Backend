@@ -104,6 +104,17 @@ exports.reorderSong = async (req, res) => {
     }
 };
 
+exports.moveSong = async (req, res) => {
+    try {
+        const { id, toIndex } = req.body;
+        const result = await radioService.moveSongToIndex(id, toIndex);
+        res.json(result);
+    } catch (error) {
+        const status = error.message.includes('not found') ? 404 : 400;
+        res.status(status).json({ message: error.message });
+    }
+};
+
 exports.bulkRemoveSongs = async (req, res) => {
     try {
         const { ids } = req.body;
