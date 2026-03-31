@@ -13,14 +13,16 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 
 async function seed() {
-    const { MONGO_URI, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+    const { MONGO_URI, MONGO_URI_DEV, NODE_ENV, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+    const mongoUri = NODE_ENV === 'production' ? MONGO_URI : (MONGO_URI_DEV || MONGO_URI);
 
-    if (!MONGO_URI || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
-        console.error('Missing MONGO_URI, ADMIN_EMAIL, or ADMIN_PASSWORD in .env');
+    if (!mongoUri || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
+        console.error('Missing MONGO_URI/MONGO_URI_DEV, ADMIN_EMAIL, or ADMIN_PASSWORD in .env');
         process.exit(1);
     }
 
-    await mongoose.connect(MONGO_URI);
+    console.log(`Environment: ${NODE_ENV || 'not set'}, DB: ${mongoUri.split('/').pop()}`);
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected');
 
     const existing = await User.findOne({ email: ADMIN_EMAIL });
