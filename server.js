@@ -13,6 +13,7 @@ const { publicRouter: radioPublicRoutes, adminRouter: radioAdminRoutes } = requi
 const uploadRoutes = require('./modules/upload/upload.routes');
 const { initSocket } = require('./socket/index');
 const { getCorsOrigins } = require('./config/cors');
+const radioService = require('./modules/radio/radio.service');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,8 +23,13 @@ app.use(cors({ origin: getCorsOrigins() }));
 app.use(express.json());
 
 // MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected'))
+const mongoUri = process.env.NODE_ENV === 'production' ? process.env.MONGO_URI : (process.env.MONGO_URI_DEV || process.env.MONGO_URI);
+console.log(`Environment: ${process.env.NODE_ENV || 'not set'}, DB: ${mongoUri.split('/').pop()}`);
+mongoose.connect(mongoUri)
+    .then(() => {
+        console.log('MongoDB connected');
+        return radioService.initPlayback();
+    })
     .catch(err => console.error(err));
 
 // Health check

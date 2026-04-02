@@ -441,6 +441,32 @@ const moveSongToIndex = async (id, toIndex) => {
     return getPlaylist();
 };
 
+// --- Auto-resume playback on server boot ---
+
+const initPlayback = async () => {
+    if (state.currentTrack) return; // already playing
+    const songs = await Song.find().sort({ order: 1 });
+    if (songs.length === 0) return;
+
+    // Pick a random song so listeners don't always hear track #1
+    const pick = songs[Math.floor(Math.random() * songs.length)];
+    state.mode = 'music';
+    state.currentTrack = toSongObj(pick);
+    state.currentSpeaker = null;
+
+    // Fake a startTime in the past so the client seeks into the middle of the song
+    const dur = pick.duration;
+    if (dur && dur > 0) {
+        const elapsed = Math.floor(Math.random() * dur);
+        state.startTime = Math.floor(Date.now() / 1000) - elapsed;
+        scheduleAutoAdvance(dur - elapsed);
+    } else {
+        state.startTime = Math.floor(Date.now() / 1000);
+    }
+
+    console.log(`Auto-resumed playback: "${pick.title}"`);
+};
+
 module.exports = {
     setBroadcast,
     getStatus,
@@ -457,5 +483,6 @@ module.exports = {
     editSongInPlaylist,
     reorderSongInPlaylist,
     moveSongToIndex,
-    advanceToNextSong
+    advanceToNextSong,
+    initPlayback
 };
