@@ -1,0 +1,26 @@
+name: Aider (AI changes)
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "What should Aider do?"
+        required: true
+        default: "Run tests and fix any failures."
+
+jobs:
+  aider:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed if you want it to push commits
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Aider
+        uses: mirrajabi/aider-github-action@v1.1.0
+        timeout-minutes: 10
+        with:
+          api_key_env_name: OPENAI_API_KEY
+          api_key_env_value: ${{ secrets.OPENAI_API_KEY }}
+          # Many actions also accept args; if supported by this action version,
+          # you’ll pass something like: --message "${{ inputs.prompt }}"
